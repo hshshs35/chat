@@ -8,7 +8,7 @@ const socketIO = require('socket.io');
 const port = process.env.PORT || 3000;
 
 const {generateMessage, generateLocationMessage} = require('./utils/message');
-
+const {isRealString} = require('./utils/validation');
 
 var app = express();
 var server = http.createServer(app);
@@ -19,9 +19,20 @@ app.use(express.static(publicPath));
 io.on('connection', (socket)=>{
     console.log('new user connected');
 
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome to Shawn Huang \'s chatting room'));
 
-    socket.broadcast.emit('newMessage',generateMessage('Admin', 'a new user joined'));
+
+    socket.on('join', (params, callback) =>{
+        if(!isRealString(params.name) || !isRealString(params.room)){
+            callback('name and gruop required')
+        }
+
+        socket.join(params.room);
+
+        socket.emit('newMessage', generateMessage('Admin', 'Welcome to Shawn Huang \'s WeChat'));
+
+        socket.broadcast.to(params.room).emit('newMessage',generateMessage('Admin', params.name + ' just joined the group'));
+
+    });
 
     socket.on('createMessage', (message, callback) =>{
         console.log('createMessage', message);
